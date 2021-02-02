@@ -1,0 +1,46 @@
+from pomegranate import*
+
+#Cloudy
+cloudy = Node(DiscreteDistribution({
+    "not cloudy": 0.5,
+    "cloudy": 0.5,
+}), name="cloudy")
+#Sprinkler
+sprinkler = Node(ConditionalProbabilityTable([
+    ["not cloudy","no sprinkler",0.5],
+    ["not cloudy","yes sprinkler",0.5],
+    ["cloudy","no sprinkler",0.5],
+    ["cloudy","yes sprinkler",0.5]],[cloudy.distribution]),name="sprinkler")
+#Rain
+rain = Node(ConditionalProbabilityTable([
+    ["not cloudy","no rain",0.8],
+    ["not cloudy","yes rain",0.2],
+    ["cloudy","no rain",0.2],
+    ["cloudy","yes rain",0.8]],[cloudy.distribution]),name="rain")
+#Wetgrass 
+wetgrass = Node(ConditionalProbabilityTable([
+    ["no sprinkler","no rain","not wetgrass",1.0],
+    ["no sprinkler","no rain","wetgrass",0],
+    ["yes sprinkler","no rain","not wetgrass",0.1],
+    ["yes sprinkler","no rain","wetgrass",0.9],
+    ["no sprinkler","yes rain","not wetgrass",0.1],
+    ["no sprinkler","yes rain","wetgrass",0.9],
+    ["yes sprinkler","yes rain","not wetgrass",0.1],
+    ["yes sprinkler","yes rain","wetgrass",0.9]],[sprinkler.distribution,rain.distribution]),name = "wetgrass")
+
+#Create a Bayesian Network and States
+model = BayesianNetwork()
+model.add_states(cloudy,sprinkler,rain,wetgrass)
+
+#Add egdes connecting nodes
+model.add_edge(cloudy,sprinkler)
+model.add_edge(cloudy,rain)
+model.add_edge(sprinkler,wetgrass)
+model.add_edge(rain,wetgrass)
+
+#Finalize model
+model.bake()
+
+# Calculate probability for a given observation
+probability = model.probability([["cloudy","yes sprinkler","yes rain", "wetgrass"]])
+print("Probability prediction that, it is cloudy, sprinkler, raining, and wetgrass is :\n",probability)
